@@ -23,8 +23,11 @@ scalacOptions in Compile ++= Seq("-encoding", "UTF-8",
   "-Ywarn-unused"
 )
 
+//Didn't end up using cats or scalamock in pair-programming test.
 libraryDependencies ++= Seq(
-  "org.scalatest"               %%  "scalatest"                         % "3.2.13" % "test"
+    "org.typelevel" %% "cats-core" % "2.8.0",
+    "org.scalatest"               %%  "scalatest"         % "3.2.13" % "test",
+    "org.scalamock" %% "scalamock" % "4.4.0" % "test"
 )
 
 

@@ -3,6 +3,7 @@ import org.cart.Models.{ Cart, SaleTotal, LineItem, Product }
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.util.UUID
+import Models.Constants._
 
 class CartTest extends AnyFunSuite {
 
@@ -50,7 +51,7 @@ class CartTest extends AnyFunSuite {
     val cartWithItems = emptyCart.addItem(twoDoveBars).addItem(threeDoveBars).addItem(fourAxeDeos).addItem(twoAxeDeos)
     assert(
       cartWithItems.items.get(doveSoap) == Some(LineItem(doveSoap, twoDoveBars.quantity + threeDoveBars.quantity))
-      && cartWithItems.items.get(axeDeos) == Some(LineItem(axeDeos, fourAxeDeos.quantity + twoAxeDeos.quantity)),
+        && cartWithItems.items.get(axeDeos) == Some(LineItem(axeDeos, fourAxeDeos.quantity + twoAxeDeos.quantity)),
       "line items not as expected")
     assert(
       cartWithItems.total(standardSalesTax) == SaleTotal(BigDecimal("799.89"), BigDecimal("99.99"), BigDecimal("899.88")),
@@ -86,6 +87,31 @@ class CartTest extends AnyFunSuite {
 
   test("cart tax should round up for >= .5 cents") {
     assert(cartHoldsAPenny.total(BigDecimal("0.5")).tax == BigDecimal("0.01"))
+  }
+
+  test("should remove item") {
+    assert(emptyCart.addItem(twoDoveBars).removeProduct(doveSoap, 1) ==
+      Right(Cart(Map(doveSoap -> LineItem(doveSoap, 1)))))
+  }
+
+  test("cart notifies when product is not already in the cart") {
+    val cartWithDove = emptyCart.addItem(twoDoveBars)
+    assert(cartWithDove.removeProduct(axeDeos, 1) == Left(NotFound))
+  }
+  test("cart notifies when quantity after change is <0") {
+    val quantity = 2
+    val cartWithDove = emptyCart.addItem(LineItem(product = doveSoap, quantity = quantity))
+    assert(cartWithDove.removeProduct(doveSoap, quantity + 1) == Left(InvalidQuantity))
+  }
+
+  test("full scenario") {
+    val cart = emptyCart.addItem(LineItem(doveSoap, 2)).removeProduct(doveSoap, 1).map(cart =>
+      cart.addItem(LineItem(doveSoap, 3)))
+    assert(cart == Right(emptyCart.addItem(LineItem(doveSoap, 4))))
+
+    assert(cart.map(_.total(standardSalesTax)) ==
+      Right(SaleTotal(BigDecimal("159.96"), BigDecimal("20.00"), BigDecimal("179.96"))))
+
   }
 
 }
